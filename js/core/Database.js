@@ -1,22 +1,30 @@
-import {EVENT} from 'Constants';
-import User from 'User';
-import Group from 'Group';
-import File from 'File';
+import {EVENT,EXCEPTION,DOWNLOAD_STATUS} from './Constants.js';
+import {User} from './User.js';
+import {Group} from './Group.js';
+import {File} from './File.js';
 
 const Realm = require('realm');
+
+const ChunkSchema = {
+  name: 'Chunk',
+  properties: {
+    file: {type: 'File'},
+    id: {type: 'int'},
+    hashcode: {type: 'string'}
+  }
+};
 
 const FileSchema = {
   name: 'File',
   properties: {
+    hashcode: {type: 'string'},
     name:  {type:'string',default:''},
     description: {type:'string',default:''},
-    dataUri: {type:'string',default:''}
     createdBy: {type:'User',default:undefined},
     pictureToShow: {type:'string',default:''},
     usersWhoHasIt: {type:'list', objectType:'User'},
-    localFile: {type:'bool',default:false},
-    sentDownloadRequest: {type:'bool',default:false},
-    isFolder: {type:'bool',default:false}
+    downloadStatus: {type:'string',default:DOWNLOAD_STATUS.NOT_ORDERED},
+    localFileURL: {type:'string',default:''}
   }
 };
 const UserSchema = {
@@ -65,8 +73,8 @@ function onAppStart(){
     groups.push(new Group(group));
   }
 
-  //Retrieve files which are in the download list
-  let filesRealm = realm.objects('File').filtered('localFile = true OR sendDownloadRequest = true');
+  //Retrieve files all files
+  let filesRealm = realm.objects('File');
   for(let file of filesRealm){
     files.push(new File(file));
   }
@@ -89,11 +97,53 @@ function onAppStop(){
 }
 
 function onFileMetaSignal(signal){
-  
+    //find related file and call saveToLocalDB function
 }
 
 function onPeopleSignal(signal){
-
+    //find related people object and call saveToLocalDB function
 }
 
-export {onAppStart,onAppStop,onFileMetaSignal,onPeopleSignal}
+class LocalDB{
+  constructor(objectType){
+    switch (objectType) {
+      case 'File':
+      case 'User':
+      case 'Group':
+        this.objectType = objectType;
+        break;
+      default:
+        EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
+    }
+  }
+  saveToLocalDB(){
+    switch (this.objectType) {
+      case 'File':
+          //FILE SAVING
+        break;
+      case 'User':
+          //USER SAVING
+        break;
+      case 'Group':
+          //GROUP SAVING
+      default:
+          EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
+    }
+  }
+  deleteFromLocalDB(){
+    switch (this.objectType) {
+      case 'File':
+          //FILE DELETING
+        break;
+      case 'User':
+          //USER DELETING
+        break;
+      case 'Group':
+          //GROUP DELETING
+      default:
+          EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
+    }
+  }
+}
+
+export {onAppStart,onAppStop,onFileMetaSignal,onPeopleSignal,LocalDB}

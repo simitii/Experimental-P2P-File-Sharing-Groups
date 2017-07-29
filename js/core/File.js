@@ -1,86 +1,60 @@
+//import {LocalDB} from './Database.js';
+import {DOWNLOAD_STATUS,EXCEPTION,DEFINE_CONST_PROPERTY,DEFINE_ENUM_PROPERTY} from './Constants.js';
 
-class File {
+class FileFolderPrototype{
+  constructor(classType,extraDefaults,metaData){
+    //super(type);
+    let defaults = {
+      name : '',
+      description: '',
+      downloadedSize: 0.0, //in megabytes
+      pictureToShow: '',
+      localPath: '',
+      peers: []
+    };
+    Object.assign(this,defaults,extraDefaults,metaData);
+
+    DEFINE_CONST_PROPERTY(this,'hashCode',metaData.hashCode,classType);
+    DEFINE_CONST_PROPERTY(this,'createdBy',metaData.createdBy,classType);
+    DEFINE_CONST_PROPERTY(this,'totalSize',metaData.totalSize,classType);  //in megabytes
+    DEFINE_CONST_PROPERTY(this,'peers',metaData.peers || defaults.peers,classType);
+
+    DEFINE_ENUM_PROPERTY(this,'downloadStatus',DOWNLOAD_STATUS.NOT_ORDERED,DOWNLOAD_STATUS);
+  }
+}
+
+class File extends FileFolderPrototype{
   constructor(metaData) {
     if(metaData===undefined){
       throw 'metaData parameter is neccessary';
     }
     let defaults = {
-      name : '',
-      description: '',
-      createdBy: undefined,
-      pictureToShow: undefined,
-      usersWhoHasIt: [],
-      downloadStatus: 0.0,
-      localFile: false,
-      dataUri: '',
-      sentDownloadRequest: false,
-      isFolder:false
-    };
-    Object.assign(this,defaults,metaData);
-    if(this.usersWhoHasIt === defaults.usersWhoHasIt){
-      throw 'At least one user should have the file';
+      extention: '',
+      chunks: []
     }
+    super('File',defaults,metaData);  //FileFolderPrototype also includes defaults
+    DEFINE_CONST_PROPERTY(this,'chunks',metaData.chunks || defaults.chunks,'File');
   }
   _checkIfFileExist(){
     //Check it
   }
-  get name(){
-    return this.name;
-  }
-  get pictureToShow(){
-    return this.pictureToShow;
-  }
-  get downloadStatus(){
-    return this.downloadStatus;
-  }
-  isDownloadRequestSent(){
-    return this.sentDownloadRequest;
-  }
-  get usersWhoHasIt(){
-    return this.usersWhoHasIt;
-  }
-  get createdBy(){
-    return this.createdBy;
-  }
-  set name(name){
-    if(name===undefined){
-      throw 'name parameter is neccessary';
-    }
-    this.name = name;
-    //Send new name to others
-  }
-  set description(description){
-    if(description===undefined){
-      throw 'description parameter is neccessary';
-    }
-    this.description = description;
-    //Send new description to others
-  }
-  sendDownloadRequest(){
-    //Send download request to others
-  }
-  _createPieces(){
-
-  }
-  _createHash(data){
-
-  }
-  _checkHash(data,hashcode){
-
-  }
-  _sendLastChanceToDownloadNotification(){
+  sendLastChanceToDownloadNotification(){
     //Send it
   }
 }
 
-class Folder extends File{
-  constructor(metaData,dataUri='') {
+class Folder extends FileFolderPrototype{
+  constructor(metaData) {
     if(metaData===undefined){
       throw 'metaData parameter is neccessary';
     }
-    metaData.isFolder = true;
-    metaData.pictureToShow = 'Folder';
-    super(metaData,dataUri);
+    let defaults = {
+      pictureToShow : 'Folder',
+      files: []
+    };
+    super('Folder',defaults,metaData);
+
+    DEFINE_CONST_PROPERTY(this,'files',metaData.files || defaults.files,'Folder');
   }
 }
 

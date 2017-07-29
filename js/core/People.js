@@ -1,8 +1,10 @@
+import {LocalDB} from './Database.js';
 
 //This a parent class for Group and User classes
 //It only provides a top api for getters and setters
-export default class People {
-  constructor(){
+export default class People extends LocalDB{
+  constructor(objectType){
+    super(objectType);
     let defaults = {
       _name : '',
       _givenName : '',
@@ -13,6 +15,7 @@ export default class People {
     Object.assign(this,defaults);
   }
 
+  //Getters and Setters
   set name(name){
     this._name = name;
   }

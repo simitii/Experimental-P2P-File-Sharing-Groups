@@ -3,7 +3,7 @@ import {EXCEPTION} from './Constants.js';
 
 class User extends People{
   constructor(args){
-    super();
+    super('User');
     let defaults = {
       onesignalID: undefined,
       connection: undefined,
@@ -69,6 +69,10 @@ class User extends People{
     EXCEPTION.WRONG_FUNCTION_CALL.throw('changeProfileDescription','User');
   }
 
+  sendInformMeWhenOnlineRequest(){
+    //TODO IMPLEMENT
+  }
+
   onConnectionStatusChange(newStatus){
     for(let callback of this.connectionStatusListeners){
       callback(this,newStatus);
@@ -103,6 +107,10 @@ class Me extends User{
   changeProfileDescription(profileDescription){
     this.profileDescription = profileDescription;
     //Send new to others
+  }
+
+  sendInformMeWhenOnlineRequest(){
+    EXCEPTION.WRONG_FUNCTION_CALL.throw('sendInformMeWhenOnlineRequest','Me');
   }
   onConnectionStatusChange(){
     EXCEPTION.WRONG_FUNCTION_CALL.throw('onConnectionStatusChange','Me');

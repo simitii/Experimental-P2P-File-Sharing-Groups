@@ -1,53 +1,29 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
 
 import React, { Component } from 'react';
 import {
   AppRegistry,
-  StyleSheet,
-  Text,
-  View
+  StatusBar,
+  View,
+  Dimensions
 } from 'react-native';
+import App from './js/ui/App.js';
+
+let window = Dimensions.get('window');
+let width = window.width;
+let height = window.height;
 
 export default class GrupBulut extends Component {
-  render() {
+  render(){
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
+      <View style={{flex:1,backgroundColor:"#1E88E5"}}>
+         <StatusBar
+           backgroundColor="#1E88E5"
+           barStyle="light-content"
+          />
+          <App style={{top:height*0.03,height:height*0.97}}/>
       </View>
-    );
+      );
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
 
 AppRegistry.registerComponent('GrupBulut', () => GrupBulut);

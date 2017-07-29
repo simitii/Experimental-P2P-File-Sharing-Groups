@@ -70,7 +70,36 @@ const EXCEPTION = {
     }
     return `you cannot call ${args[0]} function from an instance of ${args[1]} class!`;
   }),
+  UNKNOWN_OBJECT_TYPE: new EXCEPTION_ENUM('UNKNOWN_OBJECT_TYPE',(args) => {
+    if(args.length!==2){
+      return undefined;
+    }
+    return `UNKNOWN OBJECT TYPE: ${args[0]} cannot be used with ${args[1]} class!`;
+  }),
+  CANNOT_SET_AFTER_INIT: new EXCEPTION_ENUM('CANNOT_SET_AFTER_INIT',(args) => {
+    if(args.length!==2){
+      return undefined;
+    }
+    return `PROPERTY: ${args[0]} cannot be set after object initialized from ${args[1]} class!` + '\nIf this is array or object, you may use array and object manipulation operations.';
+  }),
+  INVALID_VALUE: new EXCEPTION_ENUM('INVALID_VALUE',(args) => {
+    if(args.length!==2){
+      return undefined;
+    }
+    return `INVALID VALUE: ${args[0]} is not an instance of ${args[1]}`;
+  })
+};
 
+
+const isValid = (EnumObject) => {
+  return (givenValue) => {
+    for(let [key,value] of Object.entries(EnumObject)){
+      if(value === givenValue){
+        return true;
+      }
+    }
+    return false;
+  };
 };
 
 const SIGNAL_TYPES = {
@@ -80,28 +109,49 @@ const SIGNAL_TYPES = {
   INVITATION : 'INVITATION',
   PEOPLE : 'PEOPLE',
   FILE_META : 'FILE_META',
-  FILE_SEND_REQUEST : 'FILE_SEND_REQUEST'
+  FILE_SEND_REQUEST : 'FILE_SEND_REQUEST',
+
+  toString: () => 'SIGNAL_TYPES',
 };
+SIGNAL_TYPES.isValid = isValid(SIGNAL_TYPES);  //Validates if given value is an instance of this ENUM
 
 const SIGNAL_STATUS = {
   SUCCESS: 'SUCCESS',
   FAIL : 'FAIL',
   QUESTION : 'QUESTION',
-  INFORMATION : 'INFORMATION'
+  INFORMATION : 'INFORMATION',
+
+  toString: () => 'SIGNAL_STATUS',
 };
+SIGNAL_STATUS.isValid = isValid(SIGNAL_STATUS);  //Validates if given value is an instance of this ENUM
 
 const DATA_TYPES = {
   SIGNAL : 'SIGNAL',
   DATA_PIECE : 'DATA_PIECE',
-  DATA_PIECE_REQUEST: 'DATA_PIECE_REQUEST'
+  DATA_PIECE_REQUEST: 'DATA_PIECE_REQUEST',
+
+  toString: () => 'DATA_TYPES',
 };
+DATA_TYPES.isValid = isValid(DATA_TYPES);  //Validates if given value is an instance of this ENUM
 
 const CONNECTION_STATUS = {
   CONNECTED: 'CONNECTED',
   PENDING : 'PENDING',
   CANCELLED : 'CANCELLED',
-  PENDING_TUNNEL : 'PENDING_TUNNEL'
+  PENDING_TUNNEL : 'PENDING_TUNNEL',
+
+  toString: () => 'CONNECTION_STATUS',
 };
+CONNECTION_STATUS.isValid = isValid(CONNECTION_STATUS);  //Validates if given value is an instance of this ENUM
+
+const DOWNLOAD_STATUS = {
+  NOT_ORDERED: 'NOT_ORDERED',
+  ORDERED: 'ORDERED',
+  COMPLETED: 'COMPLETED',
+
+  toString: () => 'DOWNLOAD_STATUS',
+};
+DOWNLOAD_STATUS.isValid = isValid(DOWNLOAD_STATUS);  //Validates if given value is an instance of this ENUM
 
 const CONFIG={
   ICE_SERVERS: [
@@ -142,4 +192,36 @@ const CONFIG={
   ]
 };
 
-export {EVENT,EXCEPTION,SIGNAL_TYPES,SIGNAL_STATUS,CONNECTION_STATUS,DATA_TYPES,CONFIG}
+const DEFINE_CONST_PROPERTY = (obj,propName,propValue,className) => {
+  if(obj===undefined || propName===undefined || propValue===undefined || className===undefined){
+    throw 'DEFINE_CONST_PROPERTY method: missing parameter exception';
+  }
+  let value = propValue;
+  Object.defineProperty(obj,propName,{
+    set: () => {
+      EXCEPTION.CANNOT_SET_AFTER_INIT.throw(propName,className);
+    },
+    get: () => {
+      return value;
+    }
+  });
+};
+
+const DEFINE_ENUM_PROPERTY = (obj,propName,defaultValue,EnumObject) => {
+  if(obj===undefined || propName===undefined || defaultValue===undefined || EnumObject===undefined){
+    throw 'DEFINE_ENUM_PROPERTY method: missing parameter exception';
+  }
+  let value = defaultValue;
+  Object.defineProperty(obj,propName,{
+    set: (_value) => {
+      if(EnumObject.isValid(_value)){
+        value = _value;
+      }else{
+        EXCEPTION.INVALID_VALUE.throw(_value,EnumObject.toString());
+      }
+    },
+    get: () => {return value}
+  })
+};
+
+export {EVENT,EXCEPTION,DEFINE_ENUM_PROPERTY,DEFINE_CONST_PROPERTY,SIGNAL_TYPES,SIGNAL_STATUS,CONNECTION_STATUS,DOWNLOAD_STATUS,DATA_TYPES,CONFIG}

@@ -2,7 +2,7 @@ import People from './People.js';
 
 export default class Group extends People{
   constructor(args) {
-    super();
+    super('Group');
     let defaults = {
       users : []
     };
@@ -14,6 +14,7 @@ export default class Group extends People{
   get users(){
     return this.users;
   }
+
   addUser(username,isAdmin=false){
     //ADMIN CONTROL
     if(username===undefined){
