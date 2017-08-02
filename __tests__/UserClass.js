@@ -4,51 +4,17 @@ import {EXCEPTION} from '../js/core/Constants.js';
 describe("User Class Tests",() => {
   test("constructor",()=> {
     const args = {
-      _name: 'John Dalton'
+      name: 'John Dalton'
     };
-    let user = new User(args);
-    expect(user.name).toBe(args._name);
-    expect(Array.isArray(user.rootDirectoryFiles)).toBe(true);
-    expect(user.profilePicture).toBeUndefined();
-    expect(user.profileDescription).toBe('');
-    expect(user.connection).toBeUndefined();
-    expect(user.connectionStatus).toBeUndefined();
-    expect(Array.isArray(user.connectionStatusListeners)).toBe(true);
-    expect(user.isMe).toBe(false);
-  });
-
-  test("setters and getters",() => {
-    const args = {
-      _name: 'John Dalton'
-    };
-    let user = new User(args);
-
-    //Check name property
-    expect(() => {
-      user.name = undefined;
-    }).toThrow();
-    expect(user.name).toBe(args._name);
-    user.name = "Sam Smith";
-    expect(user.name).toBe("Sam Smith");
-
-    //Check profilePicture property
-    expect(() => {
-      user.profilePicture = undefined;
-    }).toThrow();
-    user.profilePicture = 'asd';
-    expect(user.profilePicture).toBe('asd');
-
-    //Check profileDescription property
-    expect(() => {
-      user.profileDescription = undefined;
-    }).toThrow();
-    user.profileDescription = 'fgh';
-    expect(user.profileDescription).toBe('fgh');
+    const user = new User(args);
+    const defaults = User.defaults();
+    const testObj = Object.assign({},defaults,args);
+    expect(user).toEqual(testObj);
   });
 
   test("Differences Between Me & User Classes",() => {
     const args = {
-      _name: 'John Dalton'
+      name: 'John Dalton'
     };
     let user = new User(args);
     expect(() => {
@@ -86,7 +52,7 @@ describe("User Class Tests",() => {
 
   test("ConnectionStatusChange Event Functionalities",() => {
     const args = {
-      _name: 'John Dalton'
+      name: 'John Dalton'
     };
     let user = new User(args);
 

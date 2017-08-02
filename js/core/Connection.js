@@ -1,5 +1,4 @@
 import {SIGNAL_TYPES,SIGNAL_STATUS,CONFIG,DATA_TYPES} from './Constants.js';
-import Data from './Data.js';
 //import Signal from 'Signal';
 
 let base64_arraybuffer = require('base64-arraybuffer');
@@ -35,8 +34,9 @@ class MessageDecoder{
    *      DATA: Base64(if sending DATA_PIECE)
    *    }
    */
-  encryptANDencode(json){
+   encode(json){
     //TODO IMPLEMENT ENCRYPTION!!!
+    //console.log('json', json);
     if(json===undefined || json===null){
       throw 'json parameter is neccessary!';
     }
@@ -50,11 +50,11 @@ class MessageDecoder{
     }catch(e){
       throw ('JSON -> Uint8Array error: ' + e);
     }
-    if(info.buffer.byteLength>127){
-      throw 'INFO byteLength cannot be bigger than 127';
+    if(info.buffer.byteLength>255){
+      throw ('INFO byteLength cannot be bigger than 255: ' + info.buffer.byteLength);
     }
 
-    let info_length = new Uint8Array(1);
+    let info_length = new Uint8Array(2);
     info_length.set([info.buffer.byteLength],0);
 
     if(json.INFO.DATA_TYPE === DATA_TYPES.DATA_PIECE){
@@ -63,25 +63,25 @@ class MessageDecoder{
       }
       // BASE64 -> ArrayBuffer(Uint8Array)
       let data = base64_arraybuffer.decode(json.DATA);
-      let tmp  = new Uint8Array(1 + info.buffer.byteLength + data.byteLength);
+      let tmp  = new Uint8Array(2 + info.buffer.byteLength + data.byteLength);
       tmp.set(info_length, 0);
-      tmp.set(info, 1);
-      tmp.set(new Uint8Array(data), 1+info.buffer.byteLength);
+      tmp.set(info, 2);
+      tmp.set(new Uint8Array(data), 2+info.buffer.byteLength);
       return tmp.buffer;
     }else{
-      let tmp = new Uint8Array(1 + info.buffer.byteLength);
+      let tmp = new Uint8Array(2 + info.buffer.byteLength);
       tmp.set(info_length, 0);
-      tmp.set(info, 1);
+      tmp.set(info, 2);
       return tmp.buffer;
     }
   }
   /*
    *  Takes ArrayBuffer as parameter and returns JSON
-   *  example-arraybuffer: INFO_LENGTH: first 1byte (uint)
+   *  example-arraybuffer: INFO_LENGTH: first 2bytes (uint)
    *                        + INFO: next INFO_LENGTH bytes of the arraybuffer
    *                        + DATA: rest of the arraybuffer(if sending DATA_PIECE) (uintarray)
    */
-  decryptANDdecode(arraybuffer){
+   decode(arraybuffer){
     // TODO IMPLEMENT DECRYPTION!!!
     if(arraybuffer===undefined || arraybuffer===null){
       throw 'arraybuffer parameter is neccessary!';
@@ -90,13 +90,15 @@ class MessageDecoder{
       throw 'arraybuffer cannot be shorter than 2 bytes!';
     }
     // first byte of the arraybuffer -> integer
-    let info_length = new Uint8Array(arraybuffer.slice(0,1))[0];
+    let info_length = new Uint8Array(arraybuffer.slice(0,2))[0];
 
     //info part of the arraybuffer -> JSON
     let info = undefined;
     try{
-      let info_arraybuffer = arraybuffer.slice(1,1+info_length);
-      info = JSON.parse(MessageDecoder._uintToString(new Uint8Array(info_arraybuffer)));
+      let info_arraybuffer = arraybuffer.slice(2,2+info_length);
+      let objString = MessageDecoder._uintToString(new Uint8Array(info_arraybuffer));
+      //console.log('objString: ', objString);
+      info = JSON.parse(objString);
     }catch(e){
       throw ('info part of the arraybuffer -> JSON error: ' + e);
     }
@@ -104,7 +106,7 @@ class MessageDecoder{
     let data = undefined;
     if(info.DATA_TYPE === DATA_TYPES.DATA_PIECE){
       // rest of the arraybuffer -> BASE64
-      let data_arraybuffer = arraybuffer.slice(1+info_length);
+      let data_arraybuffer = arraybuffer.slice(2+info_length);
       data = base64_arraybuffer.encode(data_arraybuffer);
     }
 
@@ -115,12 +117,11 @@ class MessageDecoder{
   }
 }
 
-class Connection extends Data{
+class Connection{
   constructor(peer) {
     if(peer===undefined){
       throw 'peer parameter is neccessary';
     }
-    super();
     this.peer = peer;
     this.MessageDecoder = new MessageDecoder(peer);
     this.connection = new RTCPeerConnection(config);
@@ -224,7 +225,7 @@ class Connection extends Data{
   sendMessage(json){
     let message = undefined;
     try{
-      message = this.MessageDecoder.encryptANDencode(json);
+      message = this.MessageDecoder.encode(json);
     }catch(e){
       console.log('MessageDecoder Exception: ', e);
     }
@@ -236,7 +237,7 @@ class Connection extends Data{
   handleReceiveMessage(event){
     let message = undefined;
     try{
-      message = this.MessageDecoder.decryptANDdecode(event.data);
+      message = this.MessageDecoder.decode(event.data);
     }catch(e){
       console.log('MessageDecoder Exception: ', e);
     }
@@ -251,7 +252,7 @@ class Connection extends Data{
   }
 }
 class LocalConnection extends Connection {
-  constructor(peer){
+  constructor(peer,onmessage){
     super(peer);  //TODO give related parameters
     this._createDataChannel = this._createDataChannel.bind(this);
     this.connection.oniceconnectionstatechange = this.handleICEConnectionStateChange.bind(this);
@@ -261,14 +262,27 @@ class LocalConnection extends Connection {
     //console.log('Connection: ' + this.connection);
   }
   handleReceiveMessage(event){
-    //TODO IMPLEMENT DETAILS
-    let data = event.data;
-    try{
-      data = JSON.parse(data);
-    }catch(e){
-      console.log('Data is not a valid JSON string');
+    const message = super.handleReceiveMessage(event);
+    console.log('message received!',message);
+    switch (message.INFO.DATA_TYPE) {
+      case DATA_TYPES.DATA_PIECE:
+        if(this.onDataPiece){
+          this.onDataPiece(message);
+        }else{
+          console.log('onDataPiece method has not been set yet!');
+        }
+        break;
+      case DATA_TYPES.DATA_PIECE_REQUEST:
+        if(this.onDataPieceRequest){
+          this.onDataPieceRequest(message);
+        }else {
+          console.log('onDataPieceRequest method has not been set yet!');
+        }
+        break;
+      case SIGNAL:
+      default:
+        console.log('unknown message');
     }
-    console.log('LocalConnection DATA: ',data);
   }
   handleICEConnectionStateChange(event){
     console.log('LocalConnection:');
@@ -321,7 +335,31 @@ class RemoteConnection extends Connection {
     this.handleAfterChannelSet();
   }
   handleReceiveMessage(event){
-    console.log(super.handleReceiveMessage(event));
+    const message = super.handleReceiveMessage(event);
+    if(message === undefined){
+      console.log('undefined message received!');
+      return;
+    }
+    console.log('message received!', message);
+    switch (message.INFO.DATA_TYPE) {
+      case DATA_TYPES.DATA_PIECE:
+        if(this.onDataPiece!==undefined){
+          this.onDataPiece(message);
+        }else{
+          console.log('onDataPiece method has not been set yet!');
+        }
+        break;
+      case DATA_TYPES.DATA_PIECE_REQUEST:
+        if(this.onDataPieceRequest !==undefined){
+          this.onDataPieceRequest(message);
+        }else {
+          console.log('onDataPieceRequest method has not been set yet!');
+        }
+        break;
+      case SIGNAL:
+      default:
+        console.log('unknown message');
+    }
   }
   handleICEConnectionStateChange(event){
     console.log('RemoteConnection:');

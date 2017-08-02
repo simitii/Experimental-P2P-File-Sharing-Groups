@@ -6,7 +6,7 @@ import {
   View,
   Dimensions
 } from 'react-native';
-let App = require('./js/ui/App.js');
+import App from './js/ui/App.js';
 
 let window = Dimensions.get('window');
 let width = window.width;

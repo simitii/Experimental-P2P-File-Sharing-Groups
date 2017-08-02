@@ -1,7 +1,7 @@
 import {EVENT,ERROR,SIGNAL_TYPES,SIGNAL_STATUS,CONNECTION_STATUS,DATA_TYPES} from 'Constants';
 
 import {Signal} from 'Signal';
-import {Connection,RemoteConnection,LocalConnection} from 'Connection';
+import {RemoteConnection,LocalConnection} from 'Connection';
 import FileDownloader from 'FileDownloader';
 
 
@@ -36,10 +36,11 @@ export default class ConnectionsManager {
   connect(peer,sdpFromPeer=undefined){
     if(sdpFromPeer!==undefined){
       //Opponent started the connection we will use RemoteConnection
+      //let connection = new RemoteConnection(peer);
     }else{
       //We will start the connection so we will use LocalConnection
     }
-    opponent.addConnectionStatusListener(_onConnectionStatusChange);
+    //opponent.addConnectionStatusListener(_onConnectionStatusChange);
   }
   disconnect(peer){
     //Send disconnect signal and handle set operations needed

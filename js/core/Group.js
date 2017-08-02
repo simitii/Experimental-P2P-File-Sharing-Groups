@@ -1,18 +1,20 @@
-import People from './People.js';
+//import {LocalDB} from './Database.js';
 
-export default class Group extends People{
+export default class Group{
   constructor(args) {
-    super('Group');
+    //super('Group');
     let defaults = {
+      name : '',
+      givenName : '',
+      profilePicture : '',
+      profileDescription : '',
+      sharedFiles : [],
       users : []
     };
     Object.assign(this,defaults,args);
     if(this.users === defaults.users){
       throw 'A group should include at least one user';
     }
-  }
-  get users(){
-    return this.users;
   }
 
   addUser(username,isAdmin=false){
@@ -28,9 +30,6 @@ export default class Group extends People{
       throw 'username parameter is neccessary';
     }
     //Delete from group object and Send to other members
-  }
-  get rootDirectoryFiles(){
-    return super.rootDirectoryFiles;
   }
   addFolder(folderName){
     if(folderName===undefined){

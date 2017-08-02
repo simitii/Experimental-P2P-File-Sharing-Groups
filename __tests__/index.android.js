@@ -1,4 +1,3 @@
-/*
 import 'react-native';
 import React from 'react';
 import Index from '../index.android.js';
@@ -11,4 +10,3 @@ it('renders correctly', () => {
     <Index />
   );
 });
-*/

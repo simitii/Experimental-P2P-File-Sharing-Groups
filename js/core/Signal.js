@@ -15,6 +15,14 @@ let onReceived = function(message){
 };
 
 export default class Signal{
+  constructor(type,status,message){
+    if(type===undefined || status===undefined || message===undefined){
+      throw 'all parameters are neccessary for Signal constructor!';
+    }
+    this.type = type;
+    this.status = status;
+    this.message = message;
+  }
   static addEventListeners(){
     OneSignal.addEventListener('received', onReceived);
     OneSignal.addEventListener('registered', onRegistered);

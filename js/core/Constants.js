@@ -87,6 +87,18 @@ const EXCEPTION = {
       return undefined;
     }
     return `INVALID VALUE: ${args[0]} is not an instance of ${args[1]}`;
+  }),
+  FILE_NOT_FOUND: new EXCEPTION_ENUM('FILE_NOT_FOUND',(args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `File is not found at ${args[0]}`;
+  }),
+  NOT_A_FILE: new EXCEPTION_ENUM('NOT_A_FILE',(args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `${args[0]} is not a File`;
   })
 };
 
@@ -139,6 +151,7 @@ const CONNECTION_STATUS = {
   PENDING : 'PENDING',
   CANCELLED : 'CANCELLED',
   PENDING_TUNNEL : 'PENDING_TUNNEL',
+  DISCONNECTED: 'DISCONNECTED',
 
   toString: () => 'CONNECTION_STATUS',
 };
@@ -194,7 +207,7 @@ const CONFIG={
 
 const DEFINE_CONST_PROPERTY = (obj,propName,propValue,className) => {
   if(obj===undefined || propName===undefined || propValue===undefined || className===undefined){
-    throw 'DEFINE_CONST_PROPERTY method: missing parameter exception';
+    throw `DEFINE_CONST_PROPERTY (${propName}): missing parameter exception`;
   }
   let value = propValue;
   Object.defineProperty(obj,propName,{
@@ -209,7 +222,7 @@ const DEFINE_CONST_PROPERTY = (obj,propName,propValue,className) => {
 
 const DEFINE_ENUM_PROPERTY = (obj,propName,defaultValue,EnumObject) => {
   if(obj===undefined || propName===undefined || defaultValue===undefined || EnumObject===undefined){
-    throw 'DEFINE_ENUM_PROPERTY method: missing parameter exception';
+    throw `DEFINE_ENUM_PROPERTY (${propName}): missing parameter exception`;
   }
   let value = defaultValue;
   Object.defineProperty(obj,propName,{

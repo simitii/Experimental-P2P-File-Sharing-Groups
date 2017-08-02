@@ -1,62 +1,31 @@
-import People from './People.js';
+//import {LocalDB} from './Database.js';
 import {EXCEPTION} from './Constants.js';
 
-class User extends People{
-  constructor(args){
-    super('User');
-    let defaults = {
+const UserDefaults = {
+      name : '',
+      givenName : '',
+      profilePicture : '',
+      profileDescription : '',
+      sharedFiles : [],
       onesignalID: undefined,
       connection: undefined,
       connectionStatus: undefined,
       connectionStatusListeners: [],
       isMe:false
-    };
-    Object.assign(this,defaults,args);
+};
+
+class User{
+  constructor(args){
+    //super('User');
+    Object.assign(this,UserDefaults,args);
+  }
+  
+  static defaults(){
+    return UserDefaults;
   }
 
-  set name(name){
-    if(name===undefined){
-      throw 'name parameter is neccessary';
-    }
-    super.name = name;
-  }
-  get name(){
-    return super.name;
-  }
-
-  set givenName(givenName){
-    changeGivenName(givenName);
-  }
-  get givenName(){
-    return super.givenName;
-  }
   changeGivenName(givenName){
-    if(givenName===undefined){
-      throw 'givenName parameter is neccessary';
-    }
-    super.givenName = givenName;
-  }
-
-  set profilePicture(newPicture){
-    if(newPicture===undefined){
-      throw 'newPicture parameter is neccessary';
-    }
-
-    super.profilePicture = newPicture;
-  }
-  get profilePicture(){
-    return super.profilePicture;
-  }
-
-  set profileDescription(description){
-    if(description===undefined){
-      throw 'description parameter is neccessary';
-    }
-
-    super.profileDescription = description;
-  }
-  get profileDescription(){
-    return super.profileDescription;
+    this.givenName = givenName;
   }
 
   changeUsername(){
