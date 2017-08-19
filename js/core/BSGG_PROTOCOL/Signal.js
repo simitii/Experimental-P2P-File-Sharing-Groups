@@ -1,5 +1,5 @@
 import OneSignal from 'react-native-onesignal';
-import {EVENT,SIGNAL_TYPES,SIGNAL_STATUS,CONNECTION_STATUS,DATA_TYPES} from 'Constants';
+import {EVENT,SIGNAL_TYPES,SIGNAL_STATUS,CONNECTION_STATUS,DATA_TYPES} from '../Constants.js';
 
 let onRegistered = function(notifData) {
     console.log("Device had been registered for PUSH NOTIFICATIONS!", notifData);

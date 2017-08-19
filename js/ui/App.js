@@ -8,8 +8,8 @@ import {
   View
 } from 'react-native';
 
-import {RemoteConnection,LocalConnection} from '../core/Connection.js';
-import {User} from '../core/User.js';
+import {RemoteConnection,LocalConnection} from '../core/BSGG_PROTOCOL/Connection.js';
+import {Device} from '../core/Device.js';
 import {File} from '../core/File.js';
 import {FileDownloader} from '../core/FileDownloader.js';
 import {DATA_TYPES,CONNECTION_STATUS} from '../core/Constants.js';
@@ -124,12 +124,18 @@ export default class App extends Component {
     });
   }
   tryToReadFile(){
-    if(this.state.fileURL===undefined || this.state.fileURL===''){
-      throw 'fileURL cannot be undefined!';
-    }
     console.log('Reading File');
-    RNFS.readFile('/Users/simitii/Library/Developer/CoreSimulator/Devices/31AB68D2-2C04-4F2A-AF15-03997B4AF812/data/Containers/Data/Application/95464828-9D4E-4C69-A3A9-D19D116E21F7/Documents/tmp/2e79c95fe6b3932ede02c599afdb608596752900b225507f771bb9c5eac1eaf4/0.tmp','base64')
-      .then((data) => console.log(data))
+    let data1 = undefined;
+    RNFS.readFile(RNFS.DocumentDirectoryPath+'/images/'+'06A7A59E-CFD3-44D3-90E7-C0D586FEC2C6.jpg','base64')
+      .then((data) => {
+        //console.log('Original: ',data);
+        data1 = data;
+      })
+      .then(() => RNFS.readFile(RNFS.DocumentDirectoryPath+'/DownloadedFiles/'+'06A7A59E-CFD3-44D3-90E7-C0D586FEC2C6.jpg','base64'))
+      .then((data) => {
+        //console.log('Retrieved: ', data);
+        console.log('EQUALITY: ', data===data1);
+      })
       .catch((e) => console.log('error: ',e));
   }
   tryToWriteFile(){
@@ -156,8 +162,8 @@ export default class App extends Component {
   sendFile(){
     console.log('Creating File for RemoteConnection and FileMeta for LocalConnection!');
     const metaData1 = {
-      name:file.name,
-      extention: file.extention,
+      name: this.state.fileObj.name,
+      extention: this.state.fileObj.extention,
       hashCode: this.state.fileObj.hashCode,
       nChunks: this.state.fileObj.nChunks,
       chunkSize: this.state.fileObj.chunkSize,
@@ -190,7 +196,7 @@ export default class App extends Component {
         .catch((e) => console.log(e));
     };
     console.log('Creating Local Peer for REMOTE CONNETTION');
-    let peer = new User({name:'Samet Demir',connectionStatus:CONNECTION_STATUS.CONNECTED});
+    let peer = new Device({name:'Samet Demir',connectionStatus:CONNECTION_STATUS.CONNECTED});
     peer.connection = mRemoteConnection;
     mRemoteConnection.peer = peer;
     let fileDownloader = new FileDownloader(FileMeta);

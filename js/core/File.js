@@ -77,11 +77,11 @@ class File extends FileFolderPrototype{
         .catch((e) => reject(e));
     });
   }
-  checkFileHash(hashCode){
+  getFileHash(){
     return new Promise((resolve,reject) => {
       RNFS.hash(this.localPath,'sha256')
         .then((hash) => {
-          resolve(hash===hashCode);
+          resolve(hash);
         })
         .catch((e) => reject(e));
     });
@@ -156,7 +156,7 @@ class File extends FileFolderPrototype{
             EXCEPTION.FILE_NOT_FOUND.throw(filepath);
           }
           console.log("OK1");
-          return File._readFileMeta(filepath);  //Reading file metaData
+          return RNFS.stat(filepath);  //Reading file metaData
         })
         .then((_metaData) => {
           if(_metaData.isDirectory()){
@@ -230,21 +230,6 @@ class File extends FileFolderPrototype{
     const hash = CryptoJS.SHA256(data) //Create HashCode
     // WordArray => String (Hex)
     return hash.toString(CryptoJS.enc.Hex);
-  }
-
-  /*
-   * Promise<StatResult>
-   * type StatResult = {
-   *  ctime: date;     // The creation date of the file (iOS only)
-   *  mtime: date;     // The last modified date of the file
-   *  mode: number;     // UNIX file mode
-   *  size: string;     // Size in bytes
-   *  isFile: () => boolean;        // Is the file just a file?
-   *  isDirectory: () => boolean;   // Is the file a directory?
-   * };
-   */
-  static _readFileMeta(filepath){
-    return RNFS.stat(filepath);
   }
 
   sendLastChanceToDownloadNotification(){

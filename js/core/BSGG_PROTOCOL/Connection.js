@@ -1,5 +1,4 @@
-import {SIGNAL_TYPES,SIGNAL_STATUS,CONFIG,DATA_TYPES} from './Constants.js';
-//import Signal from 'Signal';
+import {SIGNAL_TYPES,SIGNAL_STATUS,CONFIG,DATA_TYPES} from '../Constants.js';
 
 let base64_arraybuffer = require('base64-arraybuffer');
 
@@ -263,7 +262,7 @@ class LocalConnection extends Connection {
   }
   handleReceiveMessage(event){
     const message = super.handleReceiveMessage(event);
-    console.log('message received!',message);
+    console.log('message received!',message.INFO);
     switch (message.INFO.DATA_TYPE) {
       case DATA_TYPES.DATA_PIECE:
         if(this.onDataPiece){
@@ -340,7 +339,7 @@ class RemoteConnection extends Connection {
       console.log('undefined message received!');
       return;
     }
-    console.log('message received!', message);
+    console.log('message received!', message.INFO);
     switch (message.INFO.DATA_TYPE) {
       case DATA_TYPES.DATA_PIECE:
         if(this.onDataPiece!==undefined){

@@ -17,14 +17,20 @@ const ChunkSchema = {
 const FileSchema = {
   name: 'File',
   properties: {
-    hashcode: {type: 'string'},
+    hashCode: {type: 'string'},
     name:  {type:'string',default:''},
     description: {type:'string',default:''},
     createdBy: {type:'User',default:undefined},
+    extention: {type:'string'},
+    nChunks: {type:'int'},
+    chunkSize: {type:'int'},
+    chunks: {type:'list',objectType:'string'},
     pictureToShow: {type:'string',default:''},
-    usersWhoHasIt: {type:'list', objectType:'User'},
+    totalSize: {type:'float'},
+    peers: {type:'list', objectType:'User'},
+    downloadedSize: {type:'float', default:0.0},
     downloadStatus: {type:'string',default:DOWNLOAD_STATUS.NOT_ORDERED},
-    localFileURL: {type:'string',default:''}
+    localPath: {type:'string',default:''}
   }
 };
 const UserSchema = {
@@ -34,6 +40,18 @@ const UserSchema = {
     profilePicture: {type:'string',default:''},
     profileDescription: {type:'string',default:''},
     rootDirectoryFiles: {type:'list',objectType:'File'},
+    onesignalID:  {type: 'string', default:''},
+    connectionStatus: {type: 'string', default:''}, //Maybe neccessary for FIREWALL SITUATION
+    isMe: {type:'bool',default:false}
+  }
+};
+
+const DeviceSchema = {
+  name: 'Device',
+  properties: {
+    name: {type:'string',default:''},
+    profilePicture: {type:'string',default:''},
+    profileDescription: {type:'string',default:''},
     onesignalID:  {type: 'string', default:''},
     connectionStatus: {type: 'string', default:''}, //Maybe neccessary for FIREWALL SITUATION
     isMe: {type:'bool',default:false}
@@ -116,7 +134,7 @@ class LocalDB{
         EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
     }
   }
-  saveToLocalDB(){
+  save(){
     switch (this.objectType) {
       case 'File':
           //FILE SAVING
@@ -130,7 +148,10 @@ class LocalDB{
           EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
     }
   }
-  deleteFromLocalDB(){
+  findAndUpdate(){
+    //Finds with hashCode and updates
+  }
+  delete(){
     switch (this.objectType) {
       case 'File':
           //FILE DELETING

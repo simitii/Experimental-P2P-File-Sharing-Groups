@@ -7,10 +7,8 @@ const UserDefaults = {
       profilePicture : '',
       profileDescription : '',
       sharedFiles : [],
-      onesignalID: undefined,
-      connection: undefined,
-      connectionStatus: undefined,
-      connectionStatusListeners: [],
+      devices: [],
+      notificationDevices: [],
       isMe:false
 };
 
@@ -19,7 +17,7 @@ class User{
     //super('User');
     Object.assign(this,UserDefaults,args);
   }
-  
+
   static defaults(){
     return UserDefaults;
   }
@@ -36,26 +34,6 @@ class User{
   }
   changeProfileDescription(){
     EXCEPTION.WRONG_FUNCTION_CALL.throw('changeProfileDescription','User');
-  }
-
-  sendInformMeWhenOnlineRequest(){
-    //TODO IMPLEMENT
-  }
-
-  onConnectionStatusChange(newStatus){
-    for(let callback of this.connectionStatusListeners){
-      callback(this,newStatus);
-    }
-  }
-  addConnectionStatusListener(callback){
-    if(this.connectionStatusListeners.indexOf(callback)===-1)
-      this.connectionStatusListeners.push(callback);
-  }
-  removeConnectionStatusLister(callback){
-    let index = this.connectionStatusListeners.indexOf(callback);
-    if(index !== -1){
-      this.connectionStatusListeners.splice(index,1);
-    }
   }
 }
 
@@ -76,19 +54,6 @@ class Me extends User{
   changeProfileDescription(profileDescription){
     this.profileDescription = profileDescription;
     //Send new to others
-  }
-
-  sendInformMeWhenOnlineRequest(){
-    EXCEPTION.WRONG_FUNCTION_CALL.throw('sendInformMeWhenOnlineRequest','Me');
-  }
-  onConnectionStatusChange(){
-    EXCEPTION.WRONG_FUNCTION_CALL.throw('onConnectionStatusChange','Me');
-  }
-  addConnectionStatusListener(){
-    EXCEPTION.WRONG_FUNCTION_CALL.throw('addConnectionStatusListener','Me');
-  }
-  removeConnectionStatusLister(){
-    EXCEPTION.WRONG_FUNCTION_CALL.throw('removeConnectionStatusLister','Me');
   }
 }
 

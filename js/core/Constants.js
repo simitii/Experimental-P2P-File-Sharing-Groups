@@ -99,6 +99,30 @@ const EXCEPTION = {
       return undefined;
     }
     return `${args[0]} is not a File`;
+  }),
+  INTERFACE_ABSTRACT_CLASS_ERROR: new EXCEPTION_ENUM('INTERFACE_ERROR', (args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `${args[0]} is an Interface/Abstract_Class. You cannot have an instance of an Interface/Abstract_Class and some methods must be overridden.`
+  }),
+  MUST_BE_OVERRIDDEN: new EXCEPTION_ENUM('MUST_BE_OVERRIDDEN', (args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `${args[0]} is an abstact method. It must be overridden!`;
+  }),
+  NECESSARY_PARAMS: new EXCEPTION_ENUM('NECESSARY_PARAMS', (args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `${args[0]} method did NOT get neccessary! Please check the method call.`;
+  }),
+  UNKNOWN_PROTOCOL: new EXCEPTION_ENUM('UNKNOWN_PROTOCOL', (args) => {
+    if(args.length!==1){
+      return undefined;
+    }
+    return `UNKNOWN PROTOCOL with code:'${args[0]}'`;
   })
 };
 

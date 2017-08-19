@@ -75,7 +75,10 @@ class Mission {
     this.file.writeTempData(this.chunkIndex,message.DATA,this.positionForNextPiece(true))
       .then(() => {
         this.writingNow = false;
-        this.afterWriting();
+        if(this.afterWriting!==undefined){
+          this.afterWriting();
+        }
+        this.afterWriting = undefined;
       })
       .catch((e) => console.log('Temp File Writing Exception: ',e));
     //We use this kind of strategy(not waiting for data to be written)
@@ -99,22 +102,31 @@ class Mission {
   }
 }
 
+class PendingMission {
+  constructor(chunkIndex,nextPiece=0) {
+    if(chunkIndex===undefined){
+      throw 'You cannot init a PendingMission object without chunkIndex!';
+    }
+    this.chunkIndex = chunkIndex;
+    this.nextPiece = nextPiece;
+  }
+}
+
 class FileDownloader {
   constructor(file,connectionsManager,resolvePromise,rejectPromise) {
     this.connectionsManager = connectionsManager;
     this.file = file;
-    //Get peers who has the file partially or completely
-    this.peers = file.peers || [];
-    this.onNewPeer = this.onNewPeer.bind(this);
+    this.peers = [];
     this.resolvePromise = resolvePromise;
     this.rejectPromise = rejectPromise;
     this.activeMissions = new Map();
     this.pendingMissions = [];
     this.nextChunk = 0;
     this.nChunks = this.file.nChunks;
-    for(let peer of this.peers){
-      this.onNewPeer(peer);
-    }
+
+    // Context Binding
+    this.onNewPeer = this.onNewPeer.bind(this);
+    this.usePeer = this.usePeer.bind(this);
     this._onConnectionStatusChange = this._onConnectionStatusChange.bind(this);
     this.onNewPeer = this.onNewPeer.bind(this);
     this._findNewMission = this._findNewMission.bind(this);
@@ -122,8 +134,24 @@ class FileDownloader {
     this.onMissionFinished = this.onMissionFinished.bind(this);
     this.onMissionCanceled = this.onMissionCanceled.bind(this);
     this._onFinish = this._onFinish.bind(this);
+
+    //Add peers and also start downloading file
+    for(let peer of file.peers){
+      this.onNewPeer(peer);
+    }
   }
   onNewPeer(peer){
+    if(this.peers.indexOf(peer)===-1){
+      this.peers.push(peer);
+      this.usePeer(peer);
+      peer.addConnectionStatusListener(this._onConnectionStatusChange);
+    }else{
+      console.log('peer is already in the list!');
+    }
+  }
+
+  //Use peer for downloading
+  usePeer(peer){
     switch (peer.connectionStatus) {
       case CONNECTION_STATUS.CONNECTED:
         //Give mission
@@ -138,7 +166,6 @@ class FileDownloader {
         connectionsManager.connectTo(peer);
         break;
     }
-    peer.addConnectionStatusListener(this._onConnectionStatusChange);
   }
   _onConnectionStatusChange(peer,oldStatus,newStatus){
     if(oldStatus!==newStatus){
@@ -189,25 +216,25 @@ class FileDownloader {
   onMissionCanceled(peer,chunkIndex,nextPiece=0){
     //Put this mission into pending missions list!
     this.activeMissions.delete(peer);
-    let pendingMission = {
-      chunkIndex: chunkIndex,
-      nextPiece: nextPiece
-    };
+    const pendingMission = new PendingMission(chunkIndex,nextPiece);
     this.pendingMissions.push(pendingMission);
     //SHOULD WE GIVE ANOTHER MISSION FOR THIS PEER?
   }
+
+  //WRITE TOGETHER INTO ONE FILE
+  //CHECK FILE hashCode
+  //IF NOT CORRECT CHECK EACH OF THE CHUNKS HASHCODES
+  //DOWNLOAD AND FIX PROBLEMATIC CHUNKS AGAIN
   _onFinish(){
-    //TODO IMPLEMENT
-    //CHECK IF EVERY CHUNK IS HERE!
-    //IF NOT FIND AND DOWNLOAD MISSING FILES
     this.file.findMissingChunks()
       .then((missingChunks) => {
         if(missingChunks.length===0){
           //No missingChunk
           this.file.mergeChunkFiles()
-            .then(() => this.file.checkFileHash())
-            .then((isCorrect) => {
-              if(isCorrect){
+            .then(() => this.file.getFileHash())
+            //CHECKING FILE_HASHCODE EQUALITY
+            .then((filehash) => {
+              if(filehash===this.file.hashCode){
                 ///DOWNLOAD TOTALLY COMPLETED
                 console.log("DOWNLOAD COMPLETED")
               }else{
@@ -218,12 +245,21 @@ class FileDownloader {
         }else{
           //SICTIK AMA COZULEBILIR!
           console.log('there are missingChunks: ',missingChunks);
+          for(let chunkIndex of missingChunks){
+            console.log('chunkIndex: ', chunkIndex);
+            const pendingMission = new PendingMission(chunkIndex);
+            this.pendingMissions.push(pendingMission);
+          }
+          this.continue();
         }
-      })
-    //WRITE TOGETHER INTO ONE FILE
-    //CHECK FILE hashCode
-    //IF NOT CORRECT CHECK EACH OF THE CHUNKS HASHCODES
-    //DOWNLOAD AND FIX PROBLEMATIC CHUNKS AGAIN
+      });
+  }
+
+  //Continue downloading the file
+  continue(){
+    for(let peer of this.peers){
+      this.usePeer(peer);
+    }
   }
   pause(callback){
     //Stop all transfers save current state
