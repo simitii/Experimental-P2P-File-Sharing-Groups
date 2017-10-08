@@ -1,5 +1,4 @@
-import {EXCEPTION} from './Constants.js';
-import {RemoteConnection,LocalConnection} from './BSGG_PROTOCOL/Connection.js';
+import {EXCEPTION,CONNECTION_STATUS} from './Constants.js';
 
 /**
   * In this context, Protocols are
@@ -7,37 +6,21 @@ import {RemoteConnection,LocalConnection} from './BSGG_PROTOCOL/Connection.js';
   *
   *   For Example:
   *   WebRTC for Connection and OneSignal for Signaling
-  *   can form a protocol (see BSGG_Protocol below)
+  *   can form a protocol (see BSGG_Protocol)
   */
 
 /**
   *   Protocol Abstract_Class is the class
-  *   that everyone of the Protocols must inherit
+  *   that everyone of the Protocols must extend
   */
 class Protocol {
-  constructor(name,code){
+  constructor(peer){
     if(new.target === Protocol){
       EXCEPTION.INTERFACE_ABSTRACT_CLASS_ERROR.throw('Protocol');
     }
-    if(name===undefined || code===undefined){
-      EXCEPTION.NECESSARY_PARAMS('Protocol.constructor');
-    }
-    this.name = name;
-    this.code = code;
-  }
-  static initWithProtocolCode(protocolCode){
-    if(protocolCode===undefined){
-      EXCEPTION.NECESSARY_PARAMS('Protocol.initWithProtocolCode');
-    }
-    switch (protocolCode) {
-      case BSGG_Protocol.code:
-        return new BSGG_Protocol();
-
-      //TODO ADD NEW PROTOCOLS HERE
-
-      default:
-        EXCEPTION.UNKNOWN_PROTOCOL.throw(protocolCode);
-    }
+    this.peer = peer;
+    this.connectionStatus = this.peer.connectionStatus;
+    this.connection = undefined;
   }
   connect(){
     EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.connect');
@@ -45,44 +28,18 @@ class Protocol {
   disconnect(){
     EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.disconnect');
   }
+  sendMessage(){
+    EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.sendMessage');
+  }
   sendSignal(){
     EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.sendSignal');
   }
   getDetails(){
-    return {
-      protocolName: this.name,
-      protocolCode: this.code
-    };
+    EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.getDetails');
   }
   toString(){
-    return `${this.name} Protocol(code: '${this.code}')`;
+    EXCEPTION.MUST_BE_OVERRIDDEN.throw('Protocol.toString');
   }
 }
 
-/**
-  *      BSGG_Protocol
-  *   ProtocolName: BSGG
-  *   ProtocolCode: A
-  *   Connection: WebRTC
-  *   Signaling: OneSignal
-  *   Devices Supported: Mobile(Android, iOS)
-  */
-class BSGG_Protocol extends Protocol {
-  constructor(peer){
-    if(peer === undefined){
-      EXCEPTION.NECESSARY_PARAMS('BSGG_Protocol.constructor');
-    }
-    //super( name ,code);
-      super('BSGG','A');
-      this.peer = peer;
-  }
-  connect(){
-    
-  }
-  disconnect(){
-
-  }
-  sendSignal(){
-
-  }
-}
+export default Protocol;

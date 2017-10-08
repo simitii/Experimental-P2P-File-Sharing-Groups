@@ -3,6 +3,7 @@ package com.grupbulut;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import io.realm.react.RealmReactPackage;
 import com.oney.WebRTCModule.WebRTCModulePackage;
 import com.imagepicker.ImagePickerPackage;
 import com.rnfs.RNFSPackage;
@@ -26,6 +27,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new RealmReactPackage(),
             new WebRTCModulePackage(),
             new ImagePickerPackage(),
             new RNFSPackage()

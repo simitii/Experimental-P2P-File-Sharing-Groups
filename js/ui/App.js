@@ -9,10 +9,13 @@ import {
 } from 'react-native';
 
 import {RemoteConnection,LocalConnection} from '../core/BSGG_PROTOCOL/Connection.js';
+import ConnectionsManager from '../core/ConnectionsManager.js';
+import {User} from '../core/User.js';
 import {Device} from '../core/Device.js';
+import * as DB from '../core/Database.js';
 import {File} from '../core/File.js';
-import {FileDownloader} from '../core/FileDownloader.js';
-import {DATA_TYPES,CONNECTION_STATUS} from '../core/Constants.js';
+import FileDownloader from '../core/FileDownloader.js';
+import {DATA_TYPES,MESSAGE_TYPES,CONNECTION_STATUS} from '../core/Constants.js';
 
 const ImagePicker = require('react-native-image-picker');
 const ImagePickerOptions = {
@@ -58,8 +61,8 @@ export default class App extends Component {
           color="#841584"
           />
           <Button
-            onPress={this.tryToReadFile}
-            title="Read File"
+            onPress={this.startDatabase}
+            title="Start DB"
             color="#841584"
             />
           <Button
@@ -138,10 +141,11 @@ export default class App extends Component {
       })
       .catch((e) => console.log('error: ',e));
   }
-  tryToWriteFile(){
-    File._writeData('/Users/simitii/Library/Developer/CoreSimulator/Devices/31AB68D2-2C04-4F2A-AF15-03997B4AF812/data/Containers/Data/Application/95464828-9D4E-4C69-A3A9-D19D116E21F7/Documents/tmp/2e79c95fe6b3932ede02c599afdb608596752900b225507f771bb9c5eac1eaf4/0.tmp',this.state.data,0)
-      .then(() => console.log('data is written to file!'))
-      .catch((e) => console.log('error: ',e));
+  startDatabase(){
+    DB.start()
+    .then(() => {
+      console.log("OK, GET READY");
+    });
   }
   createFile(){
     if(this.state.fileURL===undefined || this.state.fileURL===''){
@@ -160,6 +164,8 @@ export default class App extends Component {
       .catch((e) => console.log('error: ',e));
   }
   sendFile(){
+    console.log('Creating ConnectionsManager instance');
+    const connectionsManager = new ConnectionsManager();
     console.log('Creating File for RemoteConnection and FileMeta for LocalConnection!');
     const metaData1 = {
       name: this.state.fileObj.name,
@@ -178,32 +184,18 @@ export default class App extends Component {
     let mRemoteConnection = new RemoteConnection('PEER2');
     mLocalConnection.remote = mRemoteConnection;
     mRemoteConnection.remote = mLocalConnection;
-    mLocalConnection.onDataPieceRequest = (message) => {
-      console.log('DATA_PIECE_REQUEST!');
-      HostedFile.readData(message.INFO.size,message.INFO.position)
-        .then((data) => {
-          const res = {
-            INFO: {
-              DATA_TYPE: DATA_TYPES.DATA_PIECE,
-              file: message.INFO.file,
-              size: message.INFO.size,
-              position: message.INFO.position
-            },
-            DATA: data
-          };
-          mLocalConnection.sendMessage(res);
-        })
-        .catch((e) => console.log(e));
+
+    mLocalConnection.peer = {
+      connection: mLocalConnection
     };
+
     console.log('Creating Local Peer for REMOTE CONNETTION');
-    let peer = new Device({name:'Samet Demir',connectionStatus:CONNECTION_STATUS.CONNECTED});
+    const userForPeer = new User({name:'Samet Demir'});
+    let peer = new Device({connectionStatus:CONNECTION_STATUS.CONNECTED,owner:userForPeer,lastestSuppportedProtocol:'A'});
     peer.connection = mRemoteConnection;
     mRemoteConnection.peer = peer;
     let fileDownloader = new FileDownloader(FileMeta);
-    mRemoteConnection.onDataPiece = (message) => {
-      console.log('DATA_PIECE');
-      fileDownloader.onData(mRemoteConnection.peer,message);
-    };
+
     setTimeout(()=>{
       console.log('OK LETS GET STARTED');
       fileDownloader.onNewPeer(peer);

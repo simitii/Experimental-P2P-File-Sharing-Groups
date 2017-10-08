@@ -1,170 +1,199 @@
 import {EVENT,EXCEPTION,DOWNLOAD_STATUS} from './Constants.js';
-import {User} from './User.js';
-import {Group} from './Group.js';
-import {File} from './File.js';
+import UniqueID from './UniqueID.js';
 
 const Realm = require('realm');
+const CryptoJS = require("crypto-js");
 
-const ChunkSchema = {
-  name: 'Chunk',
-  properties: {
-    file: {type: 'File'},
-    id: {type: 'int'},
-    hashcode: {type: 'string'}
+let realm = undefined;
+const schemas = new Map();
+let started = false;
+
+
+const registerSchema = (schema) => {
+  if(started){
+    throw 'You cant register new schema after database is started!';
   }
+  if(schemas.has(schema.name)){
+    throw (`${schema.name} Schema is already registered!`);
+  }
+  schemas.set(schema.name, schema);
+}
+
+// For string list(array)
+const StringSchema = {
+    name: 'StringSchema',
+    properties: { value: 'string' }
+};
+registerSchema(StringSchema);
+
+// For int list(array)
+const IntegerSchema = {
+  name: 'IntegerSchema',
+  properties: {value: 'int'}
+};
+registerSchema(IntegerSchema);
+
+const start = () => {
+  if(started){
+    throw 'Database is already started!';
+  }
+  started = true;
+  const schemaArray = Array.from(schemas).map(([key,value]) => {
+    return value;
+  });
+  return Realm.open({schema:schemaArray})
+    .then((_realm) => {
+      realm = _realm;
+      console.log("DB is Started!");
+    })
+    .catch((e) => console.log('DB Starting Exception', e));
 };
 
-const FileSchema = {
-  name: 'File',
-  properties: {
-    hashCode: {type: 'string'},
-    name:  {type:'string',default:''},
-    description: {type:'string',default:''},
-    createdBy: {type:'User',default:undefined},
-    extention: {type:'string'},
-    nChunks: {type:'int'},
-    chunkSize: {type:'int'},
-    chunks: {type:'list',objectType:'string'},
-    pictureToShow: {type:'string',default:''},
-    totalSize: {type:'float'},
-    peers: {type:'list', objectType:'User'},
-    downloadedSize: {type:'float', default:0.0},
-    downloadStatus: {type:'string',default:DOWNLOAD_STATUS.NOT_ORDERED},
-    localPath: {type:'string',default:''}
-  }
-};
-const UserSchema = {
-  name: 'User',
-  properties: {
-    name: {type:'string',default:''},
-    profilePicture: {type:'string',default:''},
-    profileDescription: {type:'string',default:''},
-    rootDirectoryFiles: {type:'list',objectType:'File'},
-    onesignalID:  {type: 'string', default:''},
-    connectionStatus: {type: 'string', default:''}, //Maybe neccessary for FIREWALL SITUATION
-    isMe: {type:'bool',default:false}
-  }
-};
 
-const DeviceSchema = {
-  name: 'Device',
-  properties: {
-    name: {type:'string',default:''},
-    profilePicture: {type:'string',default:''},
-    profileDescription: {type:'string',default:''},
-    onesignalID:  {type: 'string', default:''},
-    connectionStatus: {type: 'string', default:''}, //Maybe neccessary for FIREWALL SITUATION
-    isMe: {type:'bool',default:false}
+const createObject = (schemaName,object,idCallback = undefined) => {
+  if(!started){
+    throw ("DB is not started yet!");
   }
-};
-
-const GroupSchema = {
-  name:'Group',
-  properties: {
-    name: {type:'string', default:''},
-    profilePicture: {type:'string',default:''},
-    profileDescription: {type:'string',default:''},
-    users: {type:'list',objectType:'User'},
-    rootDirectoryFiles: {type:'list',objectType:'File'},
-    //ADMIN??????
+  if(object.id === undefined){
+    object.id = UniqueID.createForObj(object);
+    if(idCallback !== undefined)
+      idCallback(object.id);
   }
-};
-
-let realm = new Realm({schema: [FileSchema, UserSchema,GroupSchema]});
-
-//MAIN VARIABLES
-let connectionsManager = undefined;
-let files = [];
-let users = [];
-let groups = [];
-let me = undefined;
-
-function onAppStart(){
-  //Retrieve all of the users and groups
-  let meRealm = realm.objects('User').filtered('isMe = true');
-  let usersRealm = realm.objects('User').filtered('isMe = false');
-  let groupsRealm = realm.objects('Group');
-  for(let user of usersRealm){
-    users.push(new User(user));
-  }
-  for(let group of groupsRealm){
-    groups.push(new Group(group));
-  }
-
-  //Retrieve files all files
-  let filesRealm = realm.objects('File');
-  for(let file of filesRealm){
-    files.push(new File(file));
-  }
-
-  if(meRealm!==undefined){
-    me = new User(meRealm);
-  }else{
-    EVENT.SIGNAL_IDS.addListener((ids) => {
-      //create user for me
-      me = new User(/*TODO*/);
-      EVENT.CHANGE_ON_ME.emit(me);
+  try{
+    realm.write(() => {
+      realm.create(schemaName,object);
     });
+  }catch(e){
+    console.log('DB Object Creation Exception',e);
   }
-  connectionsManager = new ConnectionsManager(me);
+};
 
-}
-
-function onAppStop(){
-  //Save the last state about all of the currently open files/groups/users
-}
-
-function onFileMetaSignal(signal){
-    //find related file and call saveToLocalDB function
-}
-
-function onPeopleSignal(signal){
-    //find related people object and call saveToLocalDB function
-}
-
-class LocalDB{
-  constructor(objectType){
-    switch (objectType) {
-      case 'File':
-      case 'User':
-      case 'Group':
-        this.objectType = objectType;
-        break;
-      default:
-        EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
-    }
+const retrieveAllObjects = (schemaName) => {
+  if(!started){
+    throw ("DB is not started yet!");
   }
-  save(){
-    switch (this.objectType) {
-      case 'File':
-          //FILE SAVING
-        break;
-      case 'User':
-          //USER SAVING
-        break;
-      case 'Group':
-          //GROUP SAVING
-      default:
-          EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
-    }
-  }
-  findAndUpdate(){
-    //Finds with hashCode and updates
-  }
-  delete(){
-    switch (this.objectType) {
-      case 'File':
-          //FILE DELETING
-        break;
-      case 'User':
-          //USER DELETING
-        break;
-      case 'Group':
-          //GROUP DELETING
-      default:
-          EXCEPTION.UNKNOWN_OBJECT_TYPE.throw(objectType,'LocalDB');
-    }
-  }
-}
+  return realm.objects(schemaName);
+};
 
-export {onAppStart,onAppStop,onFileMetaSignal,onPeopleSignal,LocalDB}
+const retrieveObjectWithID = (schemaName,objectID) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  return realm.objects(schemaName).filtered(`id = "${objectID}"`)[0];
+};
+
+const retrieveObjectsWithQuery = (schemaName,query) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  return realm.objects(schemaName).filtered(query);
+};
+
+//update should be Map object
+const updateObjectWithID = (schemaName,objectID,update) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const object = retrieveObjectWithID(schemaName,objectID);
+  try{
+    realm.write(() => {
+      update.foreach(([key,value]) => {
+        object[key] = value;
+      });
+    });
+  }catch(e){
+    console.log('DB Object Update Exception',e);
+  }
+};
+
+const updateObjectsWithQuery = (schemaName,query,update) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const objects = retrieveObjectsWithQuery(schemaName,query)[0];
+  try{
+    realm.write(() => {
+      objects.map((object) => {
+        update.foreach(([key,value]) => {
+          object[key] = value;
+        });
+      });
+    });
+  }catch(e){
+    console.log('DB Object Update Exception',e);
+  }
+};
+
+const updateAllObjects = (schemaName,update) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const objects = retrieveAllObjects(schemaName);
+  try{
+    realm.write(() => {
+      objects.map((object) => {
+        update.foreach(([key,value]) => {
+          object[key] = value;
+        });
+      });
+    });
+  }catch(e){
+    console.log('DB Object Update Exception',e);
+  }
+};
+
+const pushToListInObjectWithID = (schemaName,objectID,update) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const object = retrieveObjectWithID(schemaName,objectID);
+  try{
+    realm.write(() => {
+      update.foreach(([key,value]) => {
+        object[key].push(value);
+      });
+    });
+  }catch(e){
+    console.log('DB Object Array Push Exception',e);
+  }
+};
+
+const deleteFromListInObjectWithID = (schemaName,objectID,update) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const object = retrieveObjectWithID(schemaName,objectID);
+  try{
+    realm.write(() => {
+      update.foreach(([key,value]) => {
+        // value refers to the object which will be deleted
+        const index = object[key].indexOf(value);
+        if(index===-1){
+          throw 'Value is not in the List';
+        }
+        object[key].splice(index,1);
+      });
+    });
+  }catch(e){
+    console.log('DB Object Array Delete Exception',e);
+  }
+};
+
+const deleteObjectWithID = (schemaName,objectID) => {
+  if(!started){
+    throw ("DB is not started yet!");
+  }
+  const object = retrieveObjectWithID(schemaName,objectID);
+  try{
+    realm.write(() => {
+      realm.delete(object);
+    });
+  }catch(e){
+    console.log('DB Object Delete Exception',e);
+  }
+};
+
+export {StringSchema,IntegerSchema,registerSchema,start,createObject,retrieveAllObjects,
+  retrieveObjectWithID,retrieveObjectsWithQuery,updateObjectWithID,
+  updateObjectsWithQuery,updateAllObjects,pushToListInObjectWithID,
+  deleteFromListInObjectWithID,deleteObjectWithID};

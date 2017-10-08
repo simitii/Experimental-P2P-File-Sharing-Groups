@@ -1,10 +1,40 @@
 //import {LocalDB} from './Database.js';
 import {DOWNLOAD_STATUS,EXCEPTION,DEFINE_CONST_PROPERTY,DEFINE_ENUM_PROPERTY} from './Constants.js';
+import ObjectMemory from './ObjectMemory.js';
 
 let CryptoJS = require("crypto-js");
 let RNFS = require('react-native-fs');
 
 const APP_TEMP_FOLDER = RNFS.DocumentDirectoryPath + '/tmp/';
+
+const ChunkSchema = {
+  name: 'Chunk',
+  properties: {
+    file: {type: 'File'},
+    id: {type: 'int'},
+    hashcode: {type: 'string'}
+  }
+};
+
+const FileSchema = {
+  name: 'File',
+  properties: {
+    hashCode: {type: 'string'},
+    name:  {type:'string',default:''},
+    description: {type:'string',default:''},
+    createdBy: {type:'User',default:undefined},
+    extention: {type:'string'},
+    nChunks: {type:'int'},
+    chunkSize: {type:'int'},
+    chunks: {type:'list',objectType:'string'},
+    pictureToShow: {type:'string',default:''},
+    totalSize: {type:'float'},
+    peers: {type:'list', objectType:'User'},
+    downloadedSize: {type:'float', default:0.0},
+    downloadStatus: {type:'string',default:DOWNLOAD_STATUS.NOT_ORDERED},
+    localPath: {type:'string',default:''}
+  }
+};
 
 const FileFolderPrototypeDefaults = {
   name : '',
@@ -48,12 +78,14 @@ class File extends FileFolderPrototype{
     }
     super('File',FileDefaults,metaData);  //FileFolderPrototype also includes defaults
     DEFINE_CONST_PROPERTY(this,'chunks',metaData.chunks || FileDefaults.chunks,'File');
+
+    //Add to ObjectMemory
+    ObjectMemory.addObject(this.constructor.name,this,this.hashCode);
   }
 
   static defaults(){
     return Object.assign({},super.defaults(),FileDefaults);
   }
-
   readData(size,position){
     if(this.localPath===undefined || this.localPath.length===0){
       throw 'file not found EXCEPTION';
@@ -183,6 +215,7 @@ class File extends FileFolderPrototype{
           metaData.nChunks = chunkData.nChunks;
           metaData.chunkSize = chunkData.chunkSize;
           //Create file with metaData
+          console.log('metaData.localPath: ', metaData.localPath);
           let file = new File(metaData);
           resolve(file);  //resolve promise with new file object
         })
@@ -237,19 +270,7 @@ class File extends FileFolderPrototype{
   }
 }
 
-class Folder extends FileFolderPrototype{
-  constructor(metaData) {
-    if(metaData===undefined){
-      throw 'metaData parameter is neccessary';
-    }
-    let defaults = {
-      pictureToShow : 'Folder',
-      files: []
-    };
-    super('Folder',defaults,metaData);
+//ObjectMemory CONFIGURATION
+ObjectMemory.registerClass(File.name);
 
-    DEFINE_CONST_PROPERTY(this,'files',metaData.files || defaults.files,'Folder');
-  }
-}
-
-export {File,Folder};
+export {File};
